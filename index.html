@@ -188,6 +188,41 @@
     .letterhead{flex-direction:column;align-items:flex-start;}
     .letterhead-meta{text-align:left;}
   }
+
+  /* ===== Print / PDF template ===== */
+  #printArea{display:none;}
+  .print-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid var(--ink);padding-bottom:16px;margin-bottom:22px;}
+  .print-brand{display:flex;gap:14px;align-items:center;}
+  .print-brand h1{font-family:'Fraunces',serif;font-size:22px;margin:0;}
+  .print-brand p{margin:3px 0 0;font-size:12px;color:var(--ink-soft);line-height:1.5;}
+  .print-invoice-tag{text-align:right;}
+  .print-inv-label{display:block;font-size:11px;letter-spacing:0.1em;color:var(--ink-soft);font-weight:700;}
+  .print-inv-num{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;color:var(--sage-dark);}
+  .print-meta table{font-size:13px;margin-bottom:22px;}
+  .print-meta td{padding:3px 0;}
+  .print-meta td:first-child{color:var(--ink-soft);padding-right:18px;}
+  .print-meta td:last-child{font-weight:600;}
+  .print-items{width:100%;border-collapse:collapse;margin-bottom:6px;}
+  .print-items th{
+    text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-soft);
+    border-bottom:1.5px solid var(--ink);padding:0 8px 8px;
+  }
+  .print-items td{padding:8px;font-size:13.5px;border-bottom:1px solid var(--line);}
+  .print-items th:nth-child(2),.print-items td:nth-child(2){text-align:center;width:70px;}
+  .print-items th:nth-child(3),.print-items td:nth-child(3),
+  .print-items th:nth-child(4),.print-items td:nth-child(4){text-align:right;width:140px;font-family:'JetBrains Mono',monospace;}
+  .print-totals{display:flex;justify-content:flex-end;margin-top:6px;}
+  .print-totals table{font-family:'JetBrains Mono',monospace;font-size:14px;}
+  .print-totals td{padding:4px 0 4px 24px;text-align:right;}
+  .print-totals .grand td{font-weight:700;font-size:18px;color:var(--sage-dark);border-top:1px solid var(--ink);padding-top:8px;}
+  .print-footer{margin-top:36px;font-size:12px;color:var(--ink-soft);border-top:1px dashed var(--line);padding-top:14px;}
+
+  @media print{
+    body *{visibility:hidden;}
+    #printArea, #printArea *{visibility:visible;}
+    #printArea{display:block;position:absolute;top:0;left:0;width:100%;padding:20px;background:#fff;}
+    body{background:#fff;}
+  }
 </style>
 </head>
 <body>
@@ -224,6 +259,10 @@
         <div class="field">
           <label>Nama Pelanggan</label>
           <input type="text" id="fPelanggan" placeholder="cth. Panitia Wisuda Tahfidz">
+        </div>
+        <div class="field">
+          <label>No. WhatsApp Pelanggan (opsional)</label>
+          <input type="text" id="fTelepon" placeholder="cth. 081234567890">
         </div>
         <div class="field">
           <label>Status</label>
@@ -277,6 +316,51 @@
 
 </div>
 
+<!-- PRINT TEMPLATE (hanya tampil saat mencetak / simpan PDF) -->
+<div id="printArea">
+  <div class="print-header">
+    <div class="print-brand">
+      <div class="brand-mark">AB</div>
+      <div>
+        <h1>AISYIKO BOGA</h1>
+        <p>Jl. Sultan Agung No. 14, Yogyakarta<br>Telp: 085188145878 &nbsp;·&nbsp; Rek. BSI 7341905316</p>
+      </div>
+    </div>
+    <div class="print-invoice-tag">
+      <span class="print-inv-label">INVOICE</span>
+      <span class="print-inv-num" id="pInvNum">#0</span>
+    </div>
+  </div>
+
+  <div class="print-meta">
+    <table>
+      <tr><td>Pelanggan</td><td id="pPelanggan">-</td></tr>
+      <tr><td>Tanggal</td><td id="pTanggal">-</td></tr>
+      <tr><td>Jatuh Tempo</td><td id="pJatuhTempo">-</td></tr>
+      <tr><td>Status</td><td id="pStatus">-</td></tr>
+    </table>
+  </div>
+
+  <table class="print-items">
+    <thead>
+      <tr><th>Nama</th><th>Jumlah</th><th>Harga Satuan</th><th>Subtotal</th></tr>
+    </thead>
+    <tbody id="pItemsBody"></tbody>
+  </table>
+
+  <div class="print-totals">
+    <table>
+      <tr><td>Subtotal</td><td id="pSubtotal">Rp 0</td></tr>
+      <tr class="grand"><td>Total</td><td id="pTotal">Rp 0</td></tr>
+    </table>
+  </div>
+
+  <div class="print-footer">
+    Terima kasih atas kepercayaan Anda kepada AISYIKO BOGA.<br>
+    Pembayaran dapat dilakukan ke rekening BSI 7341905316 a.n. AISYIKO BOGA.
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -284,7 +368,7 @@
   // Isi dengan URL Web App hasil Deploy Apps Script Anda, contoh:
   // https://script.google.com/macros/s/AKfycbxxxxxxxxxxxxxxxxxxxx/exec
   const CONFIG = {
-    APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyFAdMDxjxyfxLxhkDgyOtvNTb--01L8_UlunHzULDY5q8PRkuudUt6b5PUJ92eaOfA/exec'
+    APPS_SCRIPT_URL: 'GANTI_DENGAN_URL_WEB_APP_ANDA'
   };
   // ==========================
 
@@ -350,6 +434,7 @@
   // ---- Submit ----
   document.getElementById('submitBtn').addEventListener('click', async ()=>{
     const pelanggan = document.getElementById('fPelanggan').value.trim();
+    const telepon = document.getElementById('fTelepon').value.trim();
     const tanggal = document.getElementById('fTanggal').value;
     const jatuhTempo = document.getElementById('fJatuhTempo').value;
     const status = document.getElementById('fStatus').value;
@@ -371,7 +456,7 @@
     try{
       const res = await postToSheet({
         action: 'create',
-        invoice: { pelanggan, tanggal, jatuhTempo, status, items }
+        invoice: { pelanggan, telepon, tanggal, jatuhTempo, status, items }
       });
       if(res.success){
         showToast(`Invoice #${res.invoiceNumber} tersimpan`);
@@ -389,6 +474,7 @@
 
   function resetForm(){
     document.getElementById('fPelanggan').value = '';
+    document.getElementById('fTelepon').value = '';
     document.getElementById('fStatus').value = 'BELUM DIBAYAR';
     document.getElementById('itemsBody').innerHTML = '';
     addItemRow();
@@ -417,7 +503,10 @@
     }
   }
 
+  let invoicesCache = [];
+
   function renderInvoices(invoices){
+    invoicesCache = invoices;
     document.getElementById('invoiceCount').textContent = invoices.length + ' invoice tercatat';
     const container = document.getElementById('listContainer');
     if(invoices.length === 0){
@@ -436,11 +525,82 @@
           <button class="status-pill ${inv.status === 'SUDAH DIBAYAR' ? 'paid' : 'unpaid'}"
             onclick="toggleStatus('${inv.id}','${inv.status}')">${inv.status}</button>
           <span class="ticket-actions">
+            <button onclick="printInvoice('${inv.id}')">Cetak / PDF</button>
+            <button onclick="sendWhatsApp('${inv.id}')">Kirim WA</button>
             <button onclick="deleteInvoice('${inv.id}')">Hapus</button>
           </span>
         </div>
       </div>
     `).join('');
+  }
+
+  function findInvoice(id){
+    return invoicesCache.find(inv => inv.id === id);
+  }
+
+  // ---- Cetak / Simpan PDF ----
+  function printInvoice(id){
+    const inv = findInvoice(id);
+    if(!inv){ showToast('Data invoice tidak ditemukan, muat ulang daftar dulu'); return; }
+
+    document.getElementById('pInvNum').textContent = '#' + inv.invoiceNumber;
+    document.getElementById('pPelanggan').textContent = inv.pelanggan;
+    document.getElementById('pTanggal').textContent = formatDate(inv.tanggal);
+    document.getElementById('pJatuhTempo').textContent = formatDate(inv.jatuhTempo);
+    document.getElementById('pStatus').textContent = inv.status;
+
+    document.getElementById('pItemsBody').innerHTML = (inv.items || []).map(it => `
+      <tr>
+        <td>${it.nama}</td>
+        <td>${it.jumlah}</td>
+        <td>${rupiah(it.hargaSatuan)}</td>
+        <td>${rupiah(it.subtotal)}</td>
+      </tr>
+    `).join('');
+
+    document.getElementById('pSubtotal').textContent = rupiah(inv.subtotal);
+    document.getElementById('pTotal').textContent = rupiah(inv.total);
+
+    // Beri waktu render sebelum membuka dialog cetak
+    setTimeout(()=> window.print(), 100);
+  }
+
+  // ---- Kirim via WhatsApp ----
+  function sendWhatsApp(id){
+    const inv = findInvoice(id);
+    if(!inv){ showToast('Data invoice tidak ditemukan, muat ulang daftar dulu'); return; }
+
+    let phone = (inv.telepon || '').replace(/[^0-9]/g, '');
+    if(!phone){
+      phone = (prompt('Nomor WhatsApp pelanggan belum tersimpan.\nMasukkan nomor untuk kirim invoice ini (cth. 081234567890):') || '').replace(/[^0-9]/g, '');
+      if(!phone){ return; }
+    }
+    if(phone.startsWith('0')) phone = '62' + phone.slice(1);
+    else if(!phone.startsWith('62')) phone = '62' + phone;
+
+    const itemLines = (inv.items || [])
+      .map(it => `- ${it.nama} x${it.jumlah} = ${rupiah(it.subtotal)}`)
+      .join('\n');
+
+    const message =
+`Halo ${inv.pelanggan},
+
+Berikut invoice dari *AISYIKO BOGA*:
+
+Invoice #${inv.invoiceNumber}
+Tanggal: ${formatDate(inv.tanggal)}
+Jatuh Tempo: ${formatDate(inv.jatuhTempo)}
+Status: ${inv.status}
+
+${itemLines}
+
+Total: ${rupiah(inv.total)}
+
+Pembayaran dapat dikirim ke rekening BSI 7341905316 a.n. AISYIKO BOGA.
+Terima kasih 🙏`;
+
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
   }
 
   function formatDate(d){
@@ -464,7 +624,7 @@
   }
 
   // ---- Init ----
-  if(CONFIG.APPS_SCRIPT_URL.includes('GANTI_DENGAN')){
+  if(CONFIG.APPS_SCRIPT_URL.includes('https://script.google.com/macros/s/AKfycbyFAdMDxjxyfxLxhkDgyOtvNTb--01L8_UlunHzULDY5q8PRkuudUt6b5PUJ92eaOfA/exec')){
     document.getElementById('configWarning').style.display = 'block';
   }
   document.getElementById('fTanggal').valueAsDate = new Date();
