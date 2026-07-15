@@ -570,9 +570,9 @@
     const inv = findInvoice(id);
     if(!inv){ showToast('Data invoice tidak ditemukan, muat ulang daftar dulu'); return; }
 
-    let phone = (inv.telepon || '').replace(/[^0-9]/g, '');
+    let phone = String(inv.telepon || '').replace(/[^0-9]/g, '');
     if(!phone){
-      phone = (prompt('Nomor WhatsApp pelanggan belum tersimpan.\nMasukkan nomor untuk kirim invoice ini (cth. 081234567890):') || '').replace(/[^0-9]/g, '');
+      phone = String(prompt('Nomor WhatsApp pelanggan belum tersimpan.\nMasukkan nomor untuk kirim invoice ini (cth. 081234567890):') || '').replace(/[^0-9]/g, '');
       if(!phone){ return; }
     }
     if(phone.startsWith('0')) phone = '62' + phone.slice(1);
