@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AISYIKO BOGA — Invoice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F2EBDA;
+    --card:#FFFDF7;
+    --ink:#241F1A;
+    --ink-soft:#5B5347;
+    --line:#DED2B3;
+    --sage:#47593A;
+    --sage-dark:#334029;
+    --gold:#C1872A;
+    --brick:#A24430;
+    --paid-bg:#E7EEDF;
+    --paid-fg:#3E5A2A;
+    --unpaid-bg:#F3E1DA;
+    --unpaid-fg:#9A3E28;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(36,31,26,0.035) 40px);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+  }
+  .app{max-width:1000px;margin:0 auto;padding:28px 20px 80px;}
+
+  /* Header / kop surat */
+  .letterhead{
+    display:flex;justify-content:space-between;align-items:flex-end;
+    border-bottom:3px solid var(--ink);
+    padding-bottom:16px;margin-bottom:28px;flex-wrap:wrap;gap:14px;
+  }
+  .brand{display:flex;align-items:center;gap:14px;}
+  .brand-mark{
+    width:52px;height:52px;border-radius:50%;
+    background:var(--sage);color:#fff;display:flex;align-items:center;justify-content:center;
+    font-family:'Fraunces',serif;font-weight:700;font-size:20px;flex-shrink:0;
+  }
+  .brand h1{font-family:'Fraunces',serif;font-size:26px;margin:0;letter-spacing:0.3px;}
+  .brand p{margin:2px 0 0;font-size:12.5px;color:var(--ink-soft);line-height:1.5;}
+  .letterhead-meta{text-align:right;font-size:12.5px;color:var(--ink-soft);line-height:1.6;}
+
+  /* Tabs */
+  .tabs{display:flex;gap:6px;margin-bottom:22px;}
+  .tab-btn{
+    font-family:'Inter',sans-serif;font-weight:600;font-size:13.5px;
+    padding:10px 18px;border:1px solid var(--ink);background:transparent;color:var(--ink);
+    cursor:pointer;border-radius:999px;transition:all .15s ease;
+  }
+  .tab-btn.active{background:var(--ink);color:var(--paper);}
+  .tab-btn:not(.active):hover{background:rgba(36,31,26,0.06);}
+
+  .view{display:none;}
+  .view.active{display:block;}
+
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:10px;
+    padding:24px;box-shadow:0 1px 0 rgba(36,31,26,0.04);
+  }
+  .card + .card{margin-top:18px;}
+
+  h2.section-title{
+    font-family:'Fraunces',serif;font-size:18px;margin:0 0 18px;
+    display:flex;align-items:center;gap:10px;
+  }
+  h2.section-title .num{
+    font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--sage);
+    border:1px solid var(--sage);border-radius:999px;width:22px;height:22px;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+
+  label{display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;}
+  input[type=text],input[type=date],select{
+    width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:6px;
+    font-family:'Inter',sans-serif;font-size:14px;background:#fff;color:var(--ink);
+  }
+  input:focus,select:focus{outline:2px solid var(--sage);outline-offset:1px;border-color:var(--sage);}
+
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .field{margin-bottom:16px;}
+
+  /* Item rows */
+  .items-table{width:100%;border-collapse:collapse;margin-top:6px;}
+  .items-table th{
+    text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;
+    color:var(--ink-soft);padding:0 8px 8px;font-weight:600;
+  }
+  .items-table td{padding:6px 8px;vertical-align:middle;}
+  .items-table input{padding:8px 10px;font-size:13.5px;}
+  .col-jumlah{width:80px;}
+  .col-harga{width:150px;}
+  .col-sub{width:140px;font-family:'JetBrains Mono',monospace;font-size:13px;text-align:right;padding-right:10px;color:var(--ink-soft);}
+  .col-del{width:36px;text-align:center;}
+  .btn-icon{
+    background:none;border:none;cursor:pointer;color:var(--brick);font-size:16px;
+    width:28px;height:28px;border-radius:6px;
+  }
+  .btn-icon:hover{background:var(--unpaid-bg);}
+
+  .btn-dashed{
+    margin-top:10px;padding:9px 14px;border:1.5px dashed var(--sage);background:none;
+    color:var(--sage-dark);font-weight:600;font-size:13px;border-radius:7px;cursor:pointer;
+  }
+  .btn-dashed:hover{background:var(--paid-bg);}
+
+  .totals{
+    margin-top:18px;padding-top:16px;border-top:1px dashed var(--line);
+    display:flex;justify-content:flex-end;
+  }
+  .totals table{font-family:'JetBrains Mono',monospace;font-size:14px;}
+  .totals td{padding:3px 0 3px 24px;text-align:right;}
+  .totals .grand td{font-weight:700;font-size:17px;color:var(--sage-dark);border-top:1px solid var(--ink);padding-top:8px;}
+
+  .btn-primary{
+    margin-top:20px;background:var(--sage);color:#fff;border:none;
+    padding:13px 26px;border-radius:7px;font-weight:700;font-size:14.5px;cursor:pointer;
+    font-family:'Inter',sans-serif;letter-spacing:0.2px;
+  }
+  .btn-primary:hover{background:var(--sage-dark);}
+  .btn-primary:disabled{opacity:0.5;cursor:not-allowed;}
+
+  /* List view */
+  .invoice-ticket{
+    background:var(--card);border:1px solid var(--line);border-radius:10px;
+    padding:18px 20px;margin-bottom:14px;position:relative;
+    display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;
+  }
+  .invoice-ticket::before{
+    content:"";position:absolute;left:-1px;top:50%;transform:translateY(-50%);
+    width:14px;height:14px;background:var(--paper);border-radius:50%;border:1px solid var(--line);
+  }
+  .invoice-ticket::after{
+    content:"";position:absolute;right:-1px;top:50%;transform:translateY(-50%);
+    width:14px;height:14px;background:var(--paper);border-radius:50%;border:1px solid var(--line);
+  }
+  .ticket-left{display:flex;flex-direction:column;gap:4px;}
+  .ticket-num{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink-soft);}
+  .ticket-name{font-family:'Fraunces',serif;font-size:17px;font-weight:600;}
+  .ticket-dates{font-size:12px;color:var(--ink-soft);}
+  .ticket-right{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  .ticket-total{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:16px;}
+  .status-pill{
+    font-size:11px;font-weight:700;padding:5px 12px;border-radius:999px;letter-spacing:0.02em;
+    cursor:pointer;border:none;
+  }
+  .status-pill.paid{background:var(--paid-bg);color:var(--paid-fg);}
+  .status-pill.unpaid{background:var(--unpaid-bg);color:var(--unpaid-fg);}
+  .ticket-actions button{
+    background:none;border:1px solid var(--line);border-radius:6px;padding:7px 10px;
+    cursor:pointer;font-size:12px;color:var(--ink-soft);margin-left:6px;
+  }
+  .ticket-actions button:hover{border-color:var(--brick);color:var(--brick);}
+
+  .empty-state{
+    text-align:center;padding:50px 20px;color:var(--ink-soft);font-size:14px;
+  }
+  .empty-state .num{
+    font-family:'Fraunces',serif;font-size:40px;color:var(--line);display:block;margin-bottom:8px;
+  }
+
+  .toast{
+    position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+    background:var(--ink);color:var(--paper);padding:12px 22px;border-radius:8px;
+    font-size:13.5px;font-weight:500;opacity:0;pointer-events:none;transition:opacity .25s ease;
+    z-index:50;
+  }
+  .toast.show{opacity:1;}
+
+  .config-warning{
+    background:var(--unpaid-bg);color:var(--unpaid-fg);border:1px solid var(--brick);
+    padding:12px 16px;border-radius:8px;font-size:13px;margin-bottom:18px;
+  }
+  code{background:rgba(36,31,26,0.08);padding:1px 6px;border-radius:4px;font-size:12px;}
+
+  @media(max-width:640px){
+    .grid-2{grid-template-columns:1fr;}
+    .col-harga,.col-jumlah{width:auto;}
+    .letterhead{flex-direction:column;align-items:flex-start;}
+    .letterhead-meta{text-align:left;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="letterhead">
+    <div class="brand">
+      <div class="brand-mark">AB</div>
+      <div>
+        <h1>AISYIKO BOGA</h1>
+        <p>Jl. Sultan Agung No. 14, Yogyakarta<br>Telp: 085188145878 &nbsp;·&nbsp; BSI 7341905316</p>
+      </div>
+    </div>
+    <div class="letterhead-meta">
+      Buku Invoice Digital<br>
+      <span id="invoiceCount">0 invoice tercatat</span>
+    </div>
+  </div>
+
+  <div id="configWarning" class="config-warning" style="display:none;">
+    ⚠️ URL Apps Script belum diatur. Buka file ini, cari <code>CONFIG.APPS_SCRIPT_URL</code> di bagian bawah dan isi dengan URL Web App Anda.
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-view="formView">+ Buat Invoice</button>
+    <button class="tab-btn" data-view="listView">Daftar Invoice</button>
+  </div>
+
+  <!-- FORM VIEW -->
+  <div id="formView" class="view active">
+    <div class="card">
+      <h2 class="section-title"><span class="num">1</span> Informasi Pelanggan</h2>
+      <div class="grid-2">
+        <div class="field">
+          <label>Nama Pelanggan</label>
+          <input type="text" id="fPelanggan" placeholder="cth. Panitia Wisuda Tahfidz">
+        </div>
+        <div class="field">
+          <label>Status</label>
+          <select id="fStatus">
+            <option value="BELUM DIBAYAR">Belum Dibayar</option>
+            <option value="SUDAH DIBAYAR">Sudah Dibayar</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Tanggal</label>
+          <input type="date" id="fTanggal">
+        </div>
+        <div class="field">
+          <label>Jatuh Tempo</label>
+          <input type="date" id="fJatuhTempo">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="section-title"><span class="num">2</span> Item Pesanan</h2>
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th>Nama Item</th>
+            <th class="col-jumlah">Jumlah</th>
+            <th class="col-harga">Harga Satuan</th>
+            <th class="col-sub">Subtotal</th>
+            <th class="col-del"></th>
+          </tr>
+        </thead>
+        <tbody id="itemsBody"></tbody>
+      </table>
+      <button class="btn-dashed" id="addItemBtn">+ Tambah Item</button>
+
+      <div class="totals">
+        <table>
+          <tr><td>Subtotal</td><td id="calcSubtotal">Rp 0</td></tr>
+          <tr class="grand"><td>Total</td><td id="calcTotal">Rp 0</td></tr>
+        </table>
+      </div>
+
+      <button class="btn-primary" id="submitBtn">Simpan Invoice ke Google Sheet</button>
+    </div>
+  </div>
+
+  <!-- LIST VIEW -->
+  <div id="listView" class="view">
+    <div id="listContainer"></div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ====== KONFIGURASI ======
+  // Isi dengan URL Web App hasil Deploy Apps Script Anda, contoh:
+  // https://script.google.com/macros/s/AKfycbxxxxxxxxxxxxxxxxxxxx/exec
+  const CONFIG = {
+    APPS_SCRIPT_URL: 'GANTI_DENGAN_URL_WEB_APP_ANDA'
+  };
+  // ==========================
+
+  let itemCounter = 0;
+
+  function rupiah(n){
+    n = Number(n) || 0;
+    return 'Rp ' + n.toLocaleString('id-ID');
+  }
+
+  function showToast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(()=> t.classList.remove('show'), 2600);
+  }
+
+  // ---- Tabs ----
+  document.querySelectorAll('.tab-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.view).classList.add('active');
+      if(btn.dataset.view === 'listView') loadInvoices();
+    });
+  });
+
+  // ---- Item rows ----
+  function addItemRow(nama='', jumlah=1, harga=0){
+    itemCounter++;
+    const tr = document.createElement('tr');
+    tr.dataset.id = itemCounter;
+    tr.innerHTML = `
+      <td><input type="text" class="i-nama" placeholder="cth. Snack Box" value="${nama}"></td>
+      <td class="col-jumlah"><input type="text" class="i-jumlah" value="${jumlah}"></td>
+      <td class="col-harga"><input type="text" class="i-harga" value="${harga}"></td>
+      <td class="col-sub i-sub">${rupiah(jumlah*harga)}</td>
+      <td class="col-del"><button class="btn-icon" onclick="this.closest('tr').remove(); recalc();">✕</button></td>
+    `;
+    tr.querySelectorAll('.i-jumlah,.i-harga').forEach(inp=>{
+      inp.addEventListener('input', recalc);
+    });
+    document.getElementById('itemsBody').appendChild(tr);
+    recalc();
+  }
+
+  function recalc(){
+    let subtotal = 0;
+    document.querySelectorAll('#itemsBody tr').forEach(tr=>{
+      const j = Number(tr.querySelector('.i-jumlah').value) || 0;
+      const h = Number(tr.querySelector('.i-harga').value) || 0;
+      const sub = j*h;
+      tr.querySelector('.i-sub').textContent = rupiah(sub);
+      subtotal += sub;
+    });
+    document.getElementById('calcSubtotal').textContent = rupiah(subtotal);
+    document.getElementById('calcTotal').textContent = rupiah(subtotal);
+  }
+
+  document.getElementById('addItemBtn').addEventListener('click', ()=> addItemRow());
+
+  // ---- Submit ----
+  document.getElementById('submitBtn').addEventListener('click', async ()=>{
+    const pelanggan = document.getElementById('fPelanggan').value.trim();
+    const tanggal = document.getElementById('fTanggal').value;
+    const jatuhTempo = document.getElementById('fJatuhTempo').value;
+    const status = document.getElementById('fStatus').value;
+
+    const items = [];
+    document.querySelectorAll('#itemsBody tr').forEach(tr=>{
+      const nama = tr.querySelector('.i-nama').value.trim();
+      const jumlah = Number(tr.querySelector('.i-jumlah').value) || 0;
+      const hargaSatuan = Number(tr.querySelector('.i-harga').value) || 0;
+      if(nama) items.push({nama, jumlah, hargaSatuan});
+    });
+
+    if(!pelanggan){ showToast('Isi nama pelanggan dulu ya'); return; }
+    if(items.length === 0){ showToast('Tambahkan minimal 1 item'); return; }
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true; btn.textContent = 'Menyimpan...';
+
+    try{
+      const res = await postToSheet({
+        action: 'create',
+        invoice: { pelanggan, tanggal, jatuhTempo, status, items }
+      });
+      if(res.success){
+        showToast(`Invoice #${res.invoiceNumber} tersimpan`);
+        resetForm();
+      } else {
+        showToast('Gagal: ' + (res.error || 'tidak diketahui'));
+      }
+    }catch(err){
+      showToast('Gagal terhubung ke Google Sheet');
+      console.error(err);
+    }finally{
+      btn.disabled = false; btn.textContent = 'Simpan Invoice ke Google Sheet';
+    }
+  });
+
+  function resetForm(){
+    document.getElementById('fPelanggan').value = '';
+    document.getElementById('fStatus').value = 'BELUM DIBAYAR';
+    document.getElementById('itemsBody').innerHTML = '';
+    addItemRow();
+  }
+
+  // ---- Fetch helpers ----
+  // Catatan: text/plain dipakai agar tidak memicu CORS preflight dari Apps Script
+  async function postToSheet(payload){
+    const res = await fetch(CONFIG.APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      body: JSON.stringify(payload)
+    });
+    return res.json();
+  }
+
+  async function loadInvoices(){
+    const container = document.getElementById('listContainer');
+    container.innerHTML = '<div class="empty-state">Memuat data...</div>';
+    try{
+      const res = await fetch(CONFIG.APPS_SCRIPT_URL + '?action=list');
+      const data = await res.json();
+      renderInvoices(data.invoices || []);
+    }catch(err){
+      container.innerHTML = '<div class="empty-state">Gagal memuat data. Periksa URL Apps Script.</div>';
+    }
+  }
+
+  function renderInvoices(invoices){
+    document.getElementById('invoiceCount').textContent = invoices.length + ' invoice tercatat';
+    const container = document.getElementById('listContainer');
+    if(invoices.length === 0){
+      container.innerHTML = '<div class="empty-state"><span class="num">–</span>Belum ada invoice. Buat yang pertama di tab "Buat Invoice".</div>';
+      return;
+    }
+    container.innerHTML = invoices.map(inv => `
+      <div class="invoice-ticket">
+        <div class="ticket-left">
+          <span class="ticket-num">INV #${inv.invoiceNumber}</span>
+          <span class="ticket-name">${inv.pelanggan}</span>
+          <span class="ticket-dates">${formatDate(inv.tanggal)} → jatuh tempo ${formatDate(inv.jatuhTempo)}</span>
+        </div>
+        <div class="ticket-right">
+          <span class="ticket-total">${rupiah(inv.total)}</span>
+          <button class="status-pill ${inv.status === 'SUDAH DIBAYAR' ? 'paid' : 'unpaid'}"
+            onclick="toggleStatus('${inv.id}','${inv.status}')">${inv.status}</button>
+          <span class="ticket-actions">
+            <button onclick="deleteInvoice('${inv.id}')">Hapus</button>
+          </span>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function formatDate(d){
+    if(!d) return '-';
+    const date = new Date(d);
+    if(isNaN(date)) return d;
+    return date.toLocaleDateString('id-ID', {day:'2-digit', month:'short', year:'numeric'});
+  }
+
+  async function toggleStatus(id, currentStatus){
+    const newStatus = currentStatus === 'SUDAH DIBAYAR' ? 'BELUM DIBAYAR' : 'SUDAH DIBAYAR';
+    await postToSheet({action:'updateStatus', invoiceId:id, status:newStatus});
+    loadInvoices();
+  }
+
+  async function deleteInvoice(id){
+    if(!confirm('Hapus invoice ini? Tindakan tidak bisa dibatalkan.')) return;
+    await postToSheet({action:'delete', invoiceId:id});
+    showToast('Invoice dihapus');
+    loadInvoices();
+  }
+
+  // ---- Init ----
+  if(CONFIG.APPS_SCRIPT_URL.includes('https://script.google.com/macros/s/AKfycbyFAdMDxjxyfxLxhkDgyOtvNTb--01L8_UlunHzULDY5q8PRkuudUt6b5PUJ92eaOfA/exec')){
+    document.getElementById('configWarning').style.display = 'block';
+  }
+  document.getElementById('fTanggal').valueAsDate = new Date();
+  addItemRow('Snack Box', 150, 21000);
+</script>
+</body>
+</html>
