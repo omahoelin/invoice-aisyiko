@@ -197,14 +197,16 @@
     }
     .items-table td{padding:0;width:100%;}
     .items-table td[data-label]::before{
-      content:attr(data-label);display:block;font-size:10px;font-weight:600;
-      text-transform:uppercase;letter-spacing:0.04em;color:var(--ink-soft);margin-bottom:4px;
+      content:attr(data-label);display:block;font-size:9.5px;font-weight:600;line-height:1.25;
+      text-transform:uppercase;letter-spacing:0.02em;color:var(--ink-soft);
+      margin-bottom:4px;min-height:23px;
     }
     .items-table td:first-child{width:100%;order:1;}
+    .items-table td:first-child::before{min-height:0;}
     .items-table .col-jumlah{width:28%;order:2;}
     .items-table .col-harga{width:38%;order:3;}
     .items-table .col-sub{width:calc(34% - 8px);order:4;text-align:left;padding-top:2px;}
-    .items-table .col-sub::before{margin-bottom:2px;}
+    .items-table .col-sub::before{min-height:0;margin-bottom:2px;}
     .items-table input{width:100%;}
     .items-table .col-del{
       position:absolute;top:8px;right:6px;width:auto;order:5;
