@@ -579,17 +579,29 @@
     Terima kasih atas kepercayaan Anda kepada AISYIKO BOGA.<br>
     Pembayaran dapat dilakukan ke rekening BSI 7341905316 a.n. AISYIKO BOGA.
   </div>
+
+  <script>
+    // Coba buka dialog cetak otomatis begitu halaman siap.
+    // Tombol di atas tetap berfungsi sebagai cadangan kalau ini diblokir browser.
+    window.addEventListener('load', function(){
+      setTimeout(function(){
+        try{ window.print(); }catch(e){}
+      }, 400);
+    });
+  </script>
 </body>
 </html>`;
 
-    const printWindow = window.open('', '_blank');
+    // Pakai Blob URL (bukan document.write ke about:blank) — jauh lebih stabil
+    // untuk memicu dialog cetak/Simpan PDF di browser HP (khususnya Android Chrome).
+    const blob = new Blob([printHtml], {type: 'text/html'});
+    const blobUrl = URL.createObjectURL(blob);
+    const printWindow = window.open(blobUrl, '_blank');
     if(!printWindow){
       showToast('Pop-up diblokir. Izinkan pop-up di browser untuk mencetak invoice.');
+      URL.revokeObjectURL(blobUrl);
       return;
     }
-    printWindow.document.open();
-    printWindow.document.write(printHtml);
-    printWindow.document.close();
   }
 
   // ---- Kirim via WhatsApp ----
