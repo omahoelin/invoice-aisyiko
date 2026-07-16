@@ -181,7 +181,53 @@
   }
   code{background:rgba(36,31,26,0.08);padding:1px 6px;border-radius:4px;font-size:12px;}
 
+  /* ===== Edit mode banner ===== */
+  .edit-banner{
+    background:var(--paid-bg);color:var(--paid-fg);border:1px solid var(--sage);
+    padding:12px 16px;border-radius:8px;font-size:13.5px;margin-bottom:18px;
+    display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  }
+  .edit-banner button{
+    background:var(--sage);color:#fff;border:none;padding:7px 14px;border-radius:6px;
+    font-size:12.5px;font-weight:600;cursor:pointer;
+  }
+  .edit-banner button:hover{background:var(--sage-dark);}
+
+  /* ===== Filter bar ===== */
+  .filter-bar{margin-bottom:16px;}
+  .filter-row{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:14px;margin-bottom:12px;}
+  .filter-field label{font-size:11px;}
+  .filter-field input,.filter-field select{padding:8px 10px;font-size:13px;}
+  .list-summary{font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;padding-left:2px;}
+
+  /* ===== Report view ===== */
+  .report-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;}
+  .report-stat{
+    background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;
+  }
+  .report-stat .label{font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-soft);font-weight:600;}
+  .report-stat .value{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;margin-top:6px;color:var(--sage-dark);}
+  .report-stat.warn .value{color:var(--brick);}
+  .month-table{width:100%;border-collapse:collapse;margin-bottom:24px;}
+  .month-table th{
+    text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-soft);
+    border-bottom:1.5px solid var(--ink);padding:0 10px 10px;font-weight:600;
+  }
+  .month-table td{padding:10px;font-size:13.5px;border-bottom:1px solid var(--line);}
+  .month-table td:not(:first-child){text-align:right;font-family:'JetBrains Mono',monospace;}
+  .month-table tr:hover td{background:rgba(71,89,58,0.04);}
+  .outstanding-item{
+    display:flex;justify-content:space-between;align-items:center;gap:10px;
+    padding:10px 14px;border:1px solid var(--line);border-radius:8px;margin-bottom:8px;background:var(--card);
+  }
+  .outstanding-item.overdue{border-color:var(--brick);background:var(--unpaid-bg);}
+  .outstanding-item .oi-name{font-weight:600;font-size:13.5px;}
+  .outstanding-item .oi-meta{font-size:11.5px;color:var(--ink-soft);}
+  .outstanding-item .oi-total{font-family:'JetBrains Mono',monospace;font-weight:700;}
+
   @media(max-width:640px){
+    .filter-row{grid-template-columns:1fr 1fr;}
+    .report-summary{grid-template-columns:1fr;}
     .grid-2{grid-template-columns:1fr;}
     .col-harga,.col-jumlah{width:auto;}
     .letterhead{flex-direction:column;align-items:flex-start;}
@@ -238,10 +284,15 @@
   <div class="tabs">
     <button class="tab-btn active" data-view="formView">+ Buat Invoice</button>
     <button class="tab-btn" data-view="listView">Daftar Invoice</button>
+    <button class="tab-btn" data-view="reportView">Rekap Laporan</button>
   </div>
 
   <!-- FORM VIEW -->
   <div id="formView" class="view active">
+    <div id="editBanner" class="edit-banner" style="display:none;">
+      ✏️ Mengedit <strong id="editBannerLabel"></strong>
+      <button id="cancelEditBtn" onclick="exitEditMode(); resetForm();">Batal Edit</button>
+    </div>
     <div class="card">
       <h2 class="section-title"><span class="num">1</span> Informasi Pelanggan</h2>
       <div class="grid-2">
@@ -300,7 +351,38 @@
 
   <!-- LIST VIEW -->
   <div id="listView" class="view">
+    <div class="card filter-bar">
+      <div class="filter-row">
+        <div class="field filter-field">
+          <label>Cari Pelanggan</label>
+          <input type="text" id="fSearch" placeholder="Ketik nama pelanggan...">
+        </div>
+        <div class="field filter-field">
+          <label>Status</label>
+          <select id="fFilterStatus">
+            <option value="">Semua Status</option>
+            <option value="SUDAH DIBAYAR">Sudah Dibayar</option>
+            <option value="BELUM DIBAYAR">Belum Dibayar</option>
+          </select>
+        </div>
+        <div class="field filter-field">
+          <label>Dari Tanggal</label>
+          <input type="date" id="fFilterFrom">
+        </div>
+        <div class="field filter-field">
+          <label>Sampai Tanggal</label>
+          <input type="date" id="fFilterTo">
+        </div>
+      </div>
+      <button class="btn-dashed" id="resetFilterBtn">Reset Filter</button>
+    </div>
+    <div id="listSummary" class="list-summary"></div>
     <div id="listContainer"></div>
+  </div>
+
+  <!-- REPORT VIEW -->
+  <div id="reportView" class="view">
+    <div id="reportContainer"></div>
   </div>
 
 </div>
@@ -308,6 +390,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
+
   // ====== KONFIGURASI ======
   // Isi dengan URL Web App hasil Deploy Apps Script Anda, contoh:
   // https://script.google.com/macros/s/AKfycbxxxxxxxxxxxxxxxxxxxx/exec
@@ -337,7 +420,7 @@
       document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
       btn.classList.add('active');
       document.getElementById(btn.dataset.view).classList.add('active');
-      if(btn.dataset.view === 'listView') loadInvoices();
+      if(btn.dataset.view === 'listView' || btn.dataset.view === 'reportView') loadInvoices();
     });
   });
 
@@ -375,7 +458,10 @@
 
   document.getElementById('addItemBtn').addEventListener('click', ()=> addItemRow());
 
-  // ---- Submit ----
+  // ---- Submit (create atau update) ----
+  let editingInvoiceId = null;
+  let editingInvoiceNumber = null;
+
   document.getElementById('submitBtn').addEventListener('click', async ()=>{
     const pelanggan = document.getElementById('fPelanggan').value.trim();
     const telepon = document.getElementById('fTelepon').value.trim();
@@ -394,16 +480,28 @@
     if(!pelanggan){ showToast('Isi nama pelanggan dulu ya'); return; }
     if(items.length === 0){ showToast('Tambahkan minimal 1 item'); return; }
 
+    const isEditing = !!editingInvoiceId;
     const btn = document.getElementById('submitBtn');
-    btn.disabled = true; btn.textContent = 'Menyimpan...';
+    btn.disabled = true;
+    btn.textContent = isEditing ? 'Menyimpan perubahan...' : 'Menyimpan...';
 
     try{
-      const res = await postToSheet({
-        action: 'create',
-        invoice: { pelanggan, telepon, tanggal, jatuhTempo, status, items }
-      });
+      let res;
+      if(isEditing){
+        res = await postToSheet({
+          action: 'update',
+          invoiceId: editingInvoiceId,
+          invoice: { pelanggan, telepon, tanggal, jatuhTempo, status, items }
+        });
+      } else {
+        res = await postToSheet({
+          action: 'create',
+          invoice: { pelanggan, telepon, tanggal, jatuhTempo, status, items }
+        });
+      }
       if(res.success){
-        showToast(`Invoice #${res.invoiceNumber} tersimpan`);
+        showToast(isEditing ? `Invoice #${editingInvoiceNumber} diperbarui` : `Invoice #${res.invoiceNumber} tersimpan`);
+        exitEditMode();
         resetForm();
       } else {
         showToast('Gagal: ' + (res.error || 'tidak diketahui'));
@@ -412,14 +510,64 @@
       showToast('Gagal terhubung ke Google Sheet');
       console.error(err);
     }finally{
-      btn.disabled = false; btn.textContent = 'Simpan Invoice ke Google Sheet';
+      btn.disabled = false;
+      updateSubmitButtonLabel();
     }
   });
+
+  function updateSubmitButtonLabel(){
+    const btn = document.getElementById('submitBtn');
+    btn.textContent = editingInvoiceId ? `Update Invoice #${editingInvoiceNumber}` : 'Simpan Invoice ke Google Sheet';
+  }
+
+  function exitEditMode(){
+    editingInvoiceId = null;
+    editingInvoiceNumber = null;
+    document.getElementById('editBanner').style.display = 'none';
+    updateSubmitButtonLabel();
+  }
+
+  function editInvoice(id){
+    const inv = findInvoice(id);
+    if(!inv){ showToast('Data invoice tidak ditemukan, muat ulang daftar dulu'); return; }
+
+    editingInvoiceId = id;
+    editingInvoiceNumber = inv.invoiceNumber;
+
+    document.getElementById('fPelanggan').value = inv.pelanggan || '';
+    document.getElementById('fTelepon').value = inv.telepon || '';
+    document.getElementById('fStatus').value = inv.status || 'BELUM DIBAYAR';
+    document.getElementById('fTanggal').value = toDateInputValue(inv.tanggal);
+    document.getElementById('fJatuhTempo').value = toDateInputValue(inv.jatuhTempo);
+
+    document.getElementById('itemsBody').innerHTML = '';
+    (inv.items || []).forEach(it => addItemRow(it.nama, it.jumlah, it.hargaSatuan));
+    if((inv.items || []).length === 0) addItemRow();
+
+    document.getElementById('editBannerLabel').textContent = `Invoice #${inv.invoiceNumber} — ${inv.pelanggan}`;
+    document.getElementById('editBanner').style.display = 'flex';
+    updateSubmitButtonLabel();
+
+    document.querySelector('.tab-btn[data-view="formView"]').click();
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+
+  function toDateInputValue(d){
+    if(!d) return '';
+    const date = new Date(d);
+    if(isNaN(date)) return '';
+    const y = date.getFullYear();
+    const m = String(date.getMonth()+1).padStart(2,'0');
+    const dd = String(date.getDate()).padStart(2,'0');
+    return `${y}-${m}-${dd}`;
+  }
 
   function resetForm(){
     document.getElementById('fPelanggan').value = '';
     document.getElementById('fTelepon').value = '';
     document.getElementById('fStatus').value = 'BELUM DIBAYAR';
+    document.getElementById('fTanggal').valueAsDate = new Date();
+    document.getElementById('fJatuhTempo').value = '';
     document.getElementById('itemsBody').innerHTML = '';
     addItemRow();
   }
@@ -451,13 +599,48 @@
 
   function renderInvoices(invoices){
     invoicesCache = invoices;
-    document.getElementById('invoiceCount').textContent = invoices.length + ' invoice tercatat';
+    renderFilteredList();
+    generateReport();
+  }
+
+  function getFilteredInvoices(){
+    const search = document.getElementById('fSearch').value.trim().toLowerCase();
+    const status = document.getElementById('fFilterStatus').value;
+    const from = document.getElementById('fFilterFrom').value;
+    const to = document.getElementById('fFilterTo').value;
+
+    return invoicesCache.filter(inv => {
+      if(search && !(inv.pelanggan || '').toLowerCase().includes(search)) return false;
+      if(status && inv.status !== status) return false;
+      if(from && inv.tanggal && new Date(inv.tanggal) < new Date(from)) return false;
+      if(to && inv.tanggal && new Date(inv.tanggal) > new Date(to)) return false;
+      return true;
+    });
+  }
+
+  function renderFilteredList(){
+    const filtered = getFilteredInvoices();
+    document.getElementById('invoiceCount').textContent = invoicesCache.length + ' invoice tercatat';
+
+    const summaryEl = document.getElementById('listSummary');
+    if(invoicesCache.length === 0){
+      summaryEl.textContent = '';
+    } else {
+      const totalFiltered = filtered.reduce((sum, inv) => sum + Number(inv.total || 0), 0);
+      summaryEl.textContent = `Menampilkan ${filtered.length} dari ${invoicesCache.length} invoice · Total ${rupiah(totalFiltered)}`;
+    }
+
     const container = document.getElementById('listContainer');
-    if(invoices.length === 0){
+    if(invoicesCache.length === 0){
       container.innerHTML = '<div class="empty-state"><span class="num">–</span>Belum ada invoice. Buat yang pertama di tab "Buat Invoice".</div>';
       return;
     }
-    container.innerHTML = invoices.map(inv => `
+    if(filtered.length === 0){
+      container.innerHTML = '<div class="empty-state"><span class="num">–</span>Tidak ada invoice yang cocok dengan filter ini.</div>';
+      return;
+    }
+
+    container.innerHTML = filtered.map(inv => `
       <div class="invoice-ticket">
         <div class="ticket-left">
           <span class="ticket-num">INV #${inv.invoiceNumber}</span>
@@ -469,6 +652,7 @@
           <button class="status-pill ${inv.status === 'SUDAH DIBAYAR' ? 'paid' : 'unpaid'}"
             onclick="toggleStatus('${inv.id}','${inv.status}')">${inv.status}</button>
           <span class="ticket-actions">
+            <button onclick="editInvoice('${inv.id}')">Edit</button>
             <button onclick="printInvoice('${inv.id}')">Cetak / PDF</button>
             <button onclick="sendWhatsApp('${inv.id}')">Kirim WA</button>
             <button onclick="deleteInvoice('${inv.id}')">Hapus</button>
@@ -476,6 +660,102 @@
         </div>
       </div>
     `).join('');
+  }
+
+  ['fSearch'].forEach(idAttr => {
+    document.getElementById(idAttr).addEventListener('input', renderFilteredList);
+  });
+  ['fFilterStatus','fFilterFrom','fFilterTo'].forEach(idAttr => {
+    document.getElementById(idAttr).addEventListener('change', renderFilteredList);
+  });
+  document.getElementById('resetFilterBtn').addEventListener('click', () => {
+    document.getElementById('fSearch').value = '';
+    document.getElementById('fFilterStatus').value = '';
+    document.getElementById('fFilterFrom').value = '';
+    document.getElementById('fFilterTo').value = '';
+    renderFilteredList();
+  });
+
+  // ---- Rekap Laporan ----
+  const MONTH_NAMES_ID = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+
+  function generateReport(){
+    const container = document.getElementById('reportContainer');
+    if(invoicesCache.length === 0){
+      container.innerHTML = '<div class="empty-state"><span class="num">–</span>Belum ada data untuk direkap.</div>';
+      return;
+    }
+
+    let totalOmzet = 0, totalBelumDibayar = 0, countBelumDibayar = 0;
+    const byMonth = {};
+
+    invoicesCache.forEach(inv => {
+      const total = Number(inv.total || 0);
+      if(inv.status === 'SUDAH DIBAYAR'){
+        totalOmzet += total;
+      } else {
+        totalBelumDibayar += total;
+        countBelumDibayar++;
+      }
+      const d = new Date(inv.tanggal);
+      if(!isNaN(d)){
+        const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+        if(!byMonth[key]) byMonth[key] = { label: MONTH_NAMES_ID[d.getMonth()] + ' ' + d.getFullYear(), count: 0, total: 0 };
+        byMonth[key].count++;
+        byMonth[key].total += total;
+      }
+    });
+
+    const monthRows = Object.keys(byMonth).sort().reverse().map(key => {
+      const m = byMonth[key];
+      return `<tr><td>${m.label}</td><td>${m.count} invoice</td><td>${rupiah(m.total)}</td></tr>`;
+    }).join('');
+
+    const today = new Date(); today.setHours(0,0,0,0);
+    const outstanding = invoicesCache
+      .filter(inv => inv.status !== 'SUDAH DIBAYAR')
+      .sort((a,b) => new Date(a.jatuhTempo) - new Date(b.jatuhTempo));
+
+    const outstandingHtml = outstanding.length === 0
+      ? '<p style="color:var(--ink-soft);font-size:13.5px;">Tidak ada tagihan yang belum dibayar. 🎉</p>'
+      : outstanding.map(inv => {
+          const due = new Date(inv.jatuhTempo);
+          const isOverdue = !isNaN(due) && due < today;
+          return `
+            <div class="outstanding-item ${isOverdue ? 'overdue' : ''}">
+              <div>
+                <div class="oi-name">${inv.pelanggan} <span style="color:var(--ink-soft);font-weight:400;">· INV #${inv.invoiceNumber}</span></div>
+                <div class="oi-meta">Jatuh tempo ${formatDate(inv.jatuhTempo)}${isOverdue ? ' · TERLAMBAT' : ''}</div>
+              </div>
+              <div class="oi-total">${rupiah(inv.total)}</div>
+            </div>`;
+        }).join('');
+
+    container.innerHTML = `
+      <div class="report-summary">
+        <div class="report-stat">
+          <div class="label">Total Omzet (Lunas)</div>
+          <div class="value">${rupiah(totalOmzet)}</div>
+        </div>
+        <div class="report-stat warn">
+          <div class="label">Belum Dibayar</div>
+          <div class="value">${rupiah(totalBelumDibayar)}</div>
+        </div>
+        <div class="report-stat">
+          <div class="label">Total Invoice</div>
+          <div class="value">${invoicesCache.length}</div>
+        </div>
+      </div>
+
+      <h2 class="section-title" style="margin-bottom:12px;">Omzet per Bulan</h2>
+      <table class="month-table">
+        <thead><tr><th>Bulan</th><th>Jumlah Invoice</th><th>Total Omzet</th></tr></thead>
+        <tbody>${monthRows}</tbody>
+      </table>
+
+      <h2 class="section-title" style="margin-bottom:12px;">Tagihan Belum Dibayar (${countBelumDibayar})</h2>
+      ${outstandingHtml}
+    `;
   }
 
   function findInvoice(id){
@@ -592,16 +872,14 @@
 </body>
 </html>`;
 
-    // Pakai Blob URL (bukan document.write ke about:blank) — jauh lebih stabil
-    // untuk memicu dialog cetak/Simpan PDF di browser HP (khususnya Android Chrome).
-    const blob = new Blob([printHtml], {type: 'text/html'});
-    const blobUrl = URL.createObjectURL(blob);
-    const printWindow = window.open(blobUrl, '_blank');
+    const printWindow = window.open('', '_blank');
     if(!printWindow){
       showToast('Pop-up diblokir. Izinkan pop-up di browser untuk mencetak invoice.');
-      URL.revokeObjectURL(blobUrl);
       return;
     }
+    printWindow.document.open();
+    printWindow.document.write(printHtml);
+    printWindow.document.close();
   }
 
   // ---- Kirim via WhatsApp ----
