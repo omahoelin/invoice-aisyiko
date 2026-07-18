@@ -303,7 +303,26 @@
     background:none;border:1px solid var(--line);border-radius:6px;padding:6px 10px;
     cursor:pointer;font-size:12px;color:var(--ink-soft);margin-left:6px;
   }
-  .user-row .u-actions button:hover{border-color:var(--brick);color:var(--brick);}</style>
+  .user-row .u-actions button:hover{border-color:var(--brick);color:var(--brick);}
+
+  /* ===== Data Pelanggan / Data Item (reuses user-row look) ===== */
+  .ticket-creator{font-size:11px;color:var(--ink-soft);margin-top:2px;}
+
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(36,31,26,0.45);z-index:60;
+    display:flex;align-items:center;justify-content:center;padding:20px;
+  }
+  .modal-box{
+    background:var(--card);border-radius:12px;max-width:480px;width:100%;
+    max-height:85vh;overflow-y:auto;padding:24px;box-shadow:0 8px 30px rgba(36,31,26,0.2);
+  }
+  .modal-box h3{font-family:'Fraunces',serif;font-size:18px;margin:0 0 4px;}
+  .modal-box .modal-sub{font-size:12.5px;color:var(--ink-soft);margin-bottom:16px;}
+  .modal-close-btn{
+    background:none;border:1px solid var(--line);border-radius:6px;padding:8px 14px;
+    cursor:pointer;font-size:12.5px;margin-top:14px;width:100%;
+  }
+  .modal-close-btn:hover{border-color:var(--brick);color:var(--brick);}</style>
 </head>
 <body>
 
@@ -354,6 +373,8 @@
     <button class="tab-btn active" data-view="formView">+ Buat Invoice</button>
     <button class="tab-btn" data-view="listView">Daftar Invoice</button>
     <button class="tab-btn" data-view="reportView">Rekap Laporan</button>
+    <button class="tab-btn" data-view="customersView" id="customersTabBtn" style="display:none;">Data Pelanggan</button>
+    <button class="tab-btn" data-view="itemsView" id="itemsTabBtn" style="display:none;">Data Item</button>
     <button class="tab-btn" data-view="usersView" id="usersTabBtn" style="display:none;">Kelola User</button>
   </div>
 
@@ -368,7 +389,9 @@
       <div class="grid-2">
         <div class="field">
           <label>Nama Pelanggan</label>
-          <input type="text" id="fPelanggan" placeholder="cth. Panitia Wisuda Tahfidz">
+          <input type="text" id="fPelanggan" list="customerDatalist" placeholder="cth. Panitia Wisuda Tahfidz" autocomplete="off">
+          <input type="hidden" id="fCustomerId" value="">
+          <datalist id="customerDatalist"></datalist>
         </div>
         <div class="field">
           <label>No. WhatsApp Pelanggan (opsional)</label>
@@ -406,6 +429,7 @@
         </thead>
         <tbody id="itemsBody"></tbody>
       </table>
+      <datalist id="itemCatalogDatalist"></datalist>
       <button class="btn-dashed" id="addItemBtn">+ Tambah Item</button>
 
       <div class="totals">
@@ -453,6 +477,62 @@
   <!-- REPORT VIEW -->
   <div id="reportView" class="view">
     <div id="reportContainer"></div>
+  </div>
+
+  <!-- DATA PELANGGAN VIEW (Master & Owner) -->
+  <div id="customersView" class="view">
+    <div class="card">
+      <h2 class="section-title"><span class="num">+</span> Tambah / Edit Pelanggan</h2>
+      <div class="grid-2">
+        <div class="field">
+          <label>Nama Pelanggan</label>
+          <input type="text" id="cNama" placeholder="cth. Ibu Sari">
+        </div>
+        <div class="field">
+          <label>No. WhatsApp</label>
+          <input type="text" id="cTelepon" placeholder="cth. 081234567890">
+        </div>
+        <div class="field" style="grid-column:1 / -1;">
+          <label>Alamat</label>
+          <input type="text" id="cAlamat" placeholder="cth. Jl. Kaliurang KM 5, Yogyakarta">
+        </div>
+      </div>
+      <div id="customerFormBanner" style="display:none;margin-bottom:12px;font-size:12.5px;color:var(--ink-soft);"></div>
+      <button class="btn-primary" id="customerSubmitBtn">Simpan Pelanggan</button>
+      <button class="btn-dashed" id="customerCancelEditBtn" style="display:none;">Batal Edit</button>
+    </div>
+    <div class="card">
+      <h2 class="section-title"><span class="num">#</span> Daftar Pelanggan</h2>
+      <div id="customersContainer"></div>
+    </div>
+  </div>
+
+  <!-- DATA ITEM VIEW (Master & Owner) -->
+  <div id="itemsView" class="view">
+    <div class="card">
+      <h2 class="section-title"><span class="num">+</span> Tambah / Edit Item</h2>
+      <div class="grid-2">
+        <div class="field">
+          <label>Nama Item</label>
+          <input type="text" id="iNama" placeholder="cth. Snack Box">
+        </div>
+        <div class="field">
+          <label>Harga Default</label>
+          <input type="text" id="iHargaDefault" placeholder="cth. 21000">
+        </div>
+        <div class="field">
+          <label>Satuan (opsional)</label>
+          <input type="text" id="iSatuan" placeholder="cth. box / pcs / porsi">
+        </div>
+      </div>
+      <div id="itemFormBanner" style="display:none;margin-bottom:12px;font-size:12.5px;color:var(--ink-soft);"></div>
+      <button class="btn-primary" id="itemSubmitBtn">Simpan Item</button>
+      <button class="btn-dashed" id="itemCancelEditBtn" style="display:none;">Batal Edit</button>
+    </div>
+    <div class="card">
+      <h2 class="section-title"><span class="num">#</span> Daftar Item</h2>
+      <div id="itemsContainer"></div>
+    </div>
   </div>
 
   <!-- USERS VIEW (Master only) -->
@@ -534,6 +614,7 @@
     resetToDefaultView();
     renderAuthUI();
     loadInvoices();
+    loadMasterData();
   }
 
   function resetToDefaultView(){
@@ -544,9 +625,14 @@
     document.getElementById('formView').classList.add('active');
     usersCache = [];
     invoicesCache = [];
+    customersCache = [];
+    itemCatalogCache = [];
     if(typeof exitEditMode === 'function') exitEditMode();
     if(typeof resetForm === 'function') resetForm();
     if(typeof resetUserForm === 'function') resetUserForm();
+    if(typeof resetCustomerForm === 'function') resetCustomerForm();
+    if(typeof resetItemForm === 'function') resetItemForm();
+    document.querySelectorAll('.modal-overlay').forEach(m => m.remove());
   }
 
   function renderAuthUI(){
@@ -556,6 +642,8 @@
     const isMaster = currentUser.role === 'MASTER';
     const canEdit = currentUser.role === 'MASTER' || currentUser.role === 'OWNER';
     document.getElementById('usersTabBtn').style.display = isMaster ? '' : 'none';
+    document.getElementById('customersTabBtn').style.display = canEdit ? '' : 'none';
+    document.getElementById('itemsTabBtn').style.display = canEdit ? '' : 'none';
     document.body.classList.toggle('role-admin', !canEdit);
   }
 
@@ -652,6 +740,8 @@
       document.getElementById(btn.dataset.view).classList.add('active');
       if(btn.dataset.view === 'listView' || btn.dataset.view === 'reportView') loadInvoices();
       if(btn.dataset.view === 'usersView') loadUsers();
+      if(btn.dataset.view === 'customersView') loadCustomers();
+      if(btn.dataset.view === 'itemsView') loadItemCatalog();
     });
   });
 
@@ -661,7 +751,7 @@
     const tr = document.createElement('tr');
     tr.dataset.id = itemCounter;
     tr.innerHTML = `
-      <td data-label="Nama Item"><input type="text" class="i-nama" placeholder="cth. Snack Box" value="${nama}"></td>
+      <td data-label="Nama Item"><input type="text" class="i-nama" list="itemCatalogDatalist" autocomplete="off" placeholder="cth. Snack Box" value="${nama}"></td>
       <td class="col-jumlah" data-label="Jumlah"><input type="text" class="i-jumlah" value="${jumlah}"></td>
       <td class="col-harga" data-label="Harga Satuan"><input type="text" class="i-harga" value="${harga}"></td>
       <td class="col-sub i-sub" data-label="Subtotal">${rupiah(jumlah*harga)}</td>
@@ -669,6 +759,15 @@
     `;
     tr.querySelectorAll('.i-jumlah,.i-harga').forEach(inp=>{
       inp.addEventListener('input', recalc);
+    });
+    const namaInput = tr.querySelector('.i-nama');
+    namaInput.addEventListener('input', ()=>{
+      const match = itemCatalogCache.find(it => it.nama.trim().toLowerCase() === namaInput.value.trim().toLowerCase());
+      const hargaInput = tr.querySelector('.i-harga');
+      if(match && (!hargaInput.value || Number(hargaInput.value) === 0)){
+        hargaInput.value = match.hargaDefault;
+        recalc();
+      }
     });
     document.getElementById('itemsBody').appendChild(tr);
     recalc();
@@ -689,6 +788,41 @@
 
   document.getElementById('addItemBtn').addEventListener('click', ()=> addItemRow());
 
+  // ---- Master data cache (dipakai untuk autocomplete & auto-fill di form invoice) ----
+  let customersCache = [];
+  let itemCatalogCache = [];
+
+  function refreshCustomerDatalist(){
+    document.getElementById('customerDatalist').innerHTML =
+      customersCache.map(c => `<option value="${c.nama}">`).join('');
+  }
+  function refreshItemCatalogDatalist(){
+    document.getElementById('itemCatalogDatalist').innerHTML =
+      itemCatalogCache.map(it => `<option value="${it.nama}">`).join('');
+  }
+
+  async function loadMasterData(){
+    try{
+      const [custRes, itemRes] = await Promise.all([
+        postToSheet({ action: 'listCustomers' }),
+        postToSheet({ action: 'listItemCatalog' })
+      ]);
+      if(custRes.success){ customersCache = custRes.customers || []; refreshCustomerDatalist(); }
+      if(itemRes.success){ itemCatalogCache = itemRes.itemCatalog || []; refreshItemCatalogDatalist(); }
+    }catch(err){ console.error(err); }
+  }
+
+  document.getElementById('fPelanggan').addEventListener('input', ()=>{
+    const val = document.getElementById('fPelanggan').value.trim().toLowerCase();
+    const match = customersCache.find(c => c.nama.trim().toLowerCase() === val);
+    if(match){
+      document.getElementById('fCustomerId').value = match.id;
+      if(!document.getElementById('fTelepon').value) document.getElementById('fTelepon').value = match.telepon || '';
+    } else {
+      document.getElementById('fCustomerId').value = '';
+    }
+  });
+
   // ---- Submit (create atau update) ----
   let editingInvoiceId = null;
   let editingInvoiceNumber = null;
@@ -699,6 +833,7 @@
     const tanggal = document.getElementById('fTanggal').value;
     const jatuhTempo = document.getElementById('fJatuhTempo').value;
     const status = document.getElementById('fStatus').value;
+    const customerId = document.getElementById('fCustomerId').value;
 
     const items = [];
     document.querySelectorAll('#itemsBody tr').forEach(tr=>{
@@ -722,12 +857,12 @@
         res = await postToSheet({
           action: 'update',
           invoiceId: editingInvoiceId,
-          invoice: { pelanggan, telepon, tanggal, jatuhTempo, status, items }
+          invoice: { pelanggan, telepon, tanggal, jatuhTempo, status, items, customerId }
         });
       } else {
         res = await postToSheet({
           action: 'create',
-          invoice: { pelanggan, telepon, tanggal, jatuhTempo, status, items }
+          invoice: { pelanggan, telepon, tanggal, jatuhTempo, status, items, customerId }
         });
       }
       if(res.success){
@@ -767,6 +902,7 @@
 
     document.getElementById('fPelanggan').value = inv.pelanggan || '';
     document.getElementById('fTelepon').value = inv.telepon || '';
+    document.getElementById('fCustomerId').value = inv.customerId || '';
     document.getElementById('fStatus').value = inv.status || 'BELUM DIBAYAR';
     document.getElementById('fTanggal').value = toDateInputValue(inv.tanggal);
     document.getElementById('fJatuhTempo').value = toDateInputValue(inv.jatuhTempo);
@@ -796,6 +932,7 @@
   function resetForm(){
     document.getElementById('fPelanggan').value = '';
     document.getElementById('fTelepon').value = '';
+    document.getElementById('fCustomerId').value = '';
     document.getElementById('fStatus').value = 'BELUM DIBAYAR';
     document.getElementById('fTanggal').valueAsDate = new Date();
     document.getElementById('fJatuhTempo').value = '';
@@ -907,6 +1044,7 @@
           <span class="ticket-num">INV #${inv.invoiceNumber}</span>
           <span class="ticket-name">${inv.pelanggan}</span>
           <span class="ticket-dates">${formatDate(inv.tanggal)} → jatuh tempo ${formatDate(inv.jatuhTempo)}</span>
+          ${inv.dibuatOlehNama ? `<span class="ticket-creator">Dibuat oleh: ${inv.dibuatOlehNama}</span>` : ''}
         </div>
         <div class="ticket-right">
           <span class="ticket-total">${rupiah(inv.total)}</span>
@@ -1099,6 +1237,7 @@
       <tr><td>Tanggal</td><td>${formatDate(inv.tanggal)}</td></tr>
       <tr><td>Jatuh Tempo</td><td>${formatDate(inv.jatuhTempo)}</td></tr>
       <tr><td>Status</td><td>${inv.status}</td></tr>
+      ${inv.dibuatOlehNama ? `<tr><td>Dibuat oleh</td><td>${inv.dibuatOlehNama}</td></tr>` : ''}
     </table>
   </div>
 
@@ -1313,6 +1452,249 @@ Terima kasih 🙏`;
     if(res.success){
       showToast('User dihapus');
       loadUsers();
+    } else {
+      showToast('Gagal: ' + (res.error || 'tidak diketahui'));
+    }
+  }
+
+  // ---- Data Pelanggan (Master & Owner) ----
+  let editingCustomerId = null;
+
+  async function loadCustomers(){
+    const container = document.getElementById('customersContainer');
+    container.innerHTML = '<div class="empty-state">Memuat data...</div>';
+    const res = await postToSheet({ action: 'listCustomers' });
+    if(!res.success){
+      container.innerHTML = '<div class="empty-state">' + (res.error || 'Gagal memuat pelanggan') + '</div>';
+      return;
+    }
+    customersCache = res.customers || [];
+    refreshCustomerDatalist();
+    renderCustomersView();
+  }
+
+  function renderCustomersView(){
+    const container = document.getElementById('customersContainer');
+    if(customersCache.length === 0){
+      container.innerHTML = '<div class="empty-state">Belum ada data pelanggan.</div>';
+      return;
+    }
+    container.innerHTML = customersCache.map(c => `
+      <div class="user-row">
+        <div>
+          <div class="u-name">${c.nama}</div>
+          <div class="u-username">${c.telepon || '-'} ${c.alamat ? '· ' + c.alamat : ''}</div>
+        </div>
+        <div class="u-actions">
+          <button onclick="showCustomerReport('${c.id}')">Riwayat</button>
+          <button onclick="editCustomer('${c.id}')">Edit</button>
+          <button onclick="removeCustomer('${c.id}','${c.nama.replace(/'/g,"")}')">Hapus</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function findCustomer(id){ return customersCache.find(c => c.id === id); }
+
+  function resetCustomerForm(){
+    editingCustomerId = null;
+    document.getElementById('cNama').value = '';
+    document.getElementById('cTelepon').value = '';
+    document.getElementById('cAlamat').value = '';
+    document.getElementById('customerFormBanner').style.display = 'none';
+    document.getElementById('customerCancelEditBtn').style.display = 'none';
+    document.getElementById('customerSubmitBtn').textContent = 'Simpan Pelanggan';
+  }
+
+  function editCustomer(id){
+    const c = findCustomer(id);
+    if(!c) return;
+    editingCustomerId = id;
+    document.getElementById('cNama').value = c.nama;
+    document.getElementById('cTelepon').value = c.telepon || '';
+    document.getElementById('cAlamat').value = c.alamat || '';
+    document.getElementById('customerFormBanner').textContent = `Mengedit ${c.nama}`;
+    document.getElementById('customerFormBanner').style.display = 'block';
+    document.getElementById('customerCancelEditBtn').style.display = 'inline-block';
+    document.getElementById('customerSubmitBtn').textContent = 'Update Pelanggan';
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+
+  document.getElementById('customerCancelEditBtn').addEventListener('click', resetCustomerForm);
+
+  document.getElementById('customerSubmitBtn').addEventListener('click', async ()=>{
+    const nama = document.getElementById('cNama').value.trim();
+    const telepon = document.getElementById('cTelepon').value.trim();
+    const alamat = document.getElementById('cAlamat').value.trim();
+    if(!nama){ showToast('Isi nama pelanggan dulu ya'); return; }
+
+    const btn = document.getElementById('customerSubmitBtn');
+    btn.disabled = true;
+    try{
+      let res;
+      if(editingCustomerId){
+        res = await postToSheet({ action: 'updateCustomer', customerId: editingCustomerId, customer: { nama, telepon, alamat } });
+      } else {
+        res = await postToSheet({ action: 'createCustomer', customer: { nama, telepon, alamat } });
+      }
+      if(res.success){
+        showToast(editingCustomerId ? 'Pelanggan diperbarui' : 'Pelanggan baru ditambahkan');
+        resetCustomerForm();
+        loadCustomers();
+      } else {
+        showToast('Gagal: ' + (res.error || 'tidak diketahui'));
+      }
+    }catch(err){
+      showToast('Gagal terhubung ke server');
+      console.error(err);
+    }finally{
+      btn.disabled = false;
+    }
+  });
+
+  async function removeCustomer(id, nama){
+    if(!confirm(`Hapus data pelanggan "${nama}"? Invoice yang sudah ada tidak akan terhapus.`)) return;
+    const res = await postToSheet({ action: 'deleteCustomer', customerId: id });
+    if(res.success){
+      showToast('Pelanggan dihapus');
+      loadCustomers();
+    } else {
+      showToast('Gagal: ' + (res.error || 'tidak diketahui'));
+    }
+  }
+
+  async function showCustomerReport(id){
+    const res = await postToSheet({ action: 'customerReport', customerId: id });
+    if(!res.success){ showToast('Gagal memuat riwayat: ' + (res.error || '')); return; }
+
+    const rows = (res.invoices || []).map(inv => `
+      <tr><td>INV #${inv.invoiceNumber}</td><td>${formatDate(inv.tanggal)}</td>
+        <td>${inv.status === 'SUDAH DIBAYAR' ? 'Lunas' : 'Belum'}</td><td>${rupiah(inv.total)}</td></tr>
+    `).join('');
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal-box">
+        <h3>${res.customer.nama}</h3>
+        <div class="modal-sub">${res.customer.telepon || '-'} ${res.customer.alamat ? '· ' + res.customer.alamat : ''}</div>
+        <div class="report-summary" style="grid-template-columns:1fr 1fr;">
+          <div class="report-stat"><div class="label">Total Invoice</div><div class="value">${res.totalInvoice}</div></div>
+          <div class="report-stat"><div class="label">Omzet Lunas</div><div class="value">${rupiah(res.totalOmzet)}</div></div>
+        </div>
+        ${res.totalBelumDibayar > 0 ? `<div class="report-stat warn" style="margin-bottom:16px;"><div class="label">Belum Dibayar</div><div class="value">${rupiah(res.totalBelumDibayar)}</div></div>` : ''}
+        <table class="month-table">
+          <thead><tr><th>Invoice</th><th>Tanggal</th><th>Status</th><th>Total</th></tr></thead>
+          <tbody>${rows || '<tr><td colspan="4" style="color:var(--ink-soft);">Belum ada riwayat pembelian</td></tr>'}</tbody>
+        </table>
+        <button class="modal-close-btn" id="closeReportModalBtn">Tutup</button>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.querySelector('#closeReportModalBtn').addEventListener('click', ()=> overlay.remove());
+    overlay.addEventListener('click', (e)=>{ if(e.target === overlay) overlay.remove(); });
+  }
+
+  // ---- Data Item (Master & Owner) ----
+  let editingItemCatalogId = null;
+
+  async function loadItemCatalog(){
+    const container = document.getElementById('itemsContainer');
+    container.innerHTML = '<div class="empty-state">Memuat data...</div>';
+    const res = await postToSheet({ action: 'listItemCatalog' });
+    if(!res.success){
+      container.innerHTML = '<div class="empty-state">' + (res.error || 'Gagal memuat item') + '</div>';
+      return;
+    }
+    itemCatalogCache = res.itemCatalog || [];
+    refreshItemCatalogDatalist();
+    renderItemsView();
+  }
+
+  function renderItemsView(){
+    const container = document.getElementById('itemsContainer');
+    if(itemCatalogCache.length === 0){
+      container.innerHTML = '<div class="empty-state">Belum ada data item.</div>';
+      return;
+    }
+    container.innerHTML = itemCatalogCache.map(it => `
+      <div class="user-row">
+        <div>
+          <div class="u-name">${it.nama}</div>
+          <div class="u-username">${rupiah(it.hargaDefault)} ${it.satuan ? '/ ' + it.satuan : ''}</div>
+        </div>
+        <div class="u-actions">
+          <button onclick="editItemCatalog('${it.id}')">Edit</button>
+          <button onclick="removeItemCatalog('${it.id}','${it.nama.replace(/'/g,"")}')">Hapus</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function findItemCatalog(id){ return itemCatalogCache.find(it => it.id === id); }
+
+  function resetItemForm(){
+    editingItemCatalogId = null;
+    document.getElementById('iNama').value = '';
+    document.getElementById('iHargaDefault').value = '';
+    document.getElementById('iSatuan').value = '';
+    document.getElementById('itemFormBanner').style.display = 'none';
+    document.getElementById('itemCancelEditBtn').style.display = 'none';
+    document.getElementById('itemSubmitBtn').textContent = 'Simpan Item';
+  }
+
+  function editItemCatalog(id){
+    const it = findItemCatalog(id);
+    if(!it) return;
+    editingItemCatalogId = id;
+    document.getElementById('iNama').value = it.nama;
+    document.getElementById('iHargaDefault').value = it.hargaDefault;
+    document.getElementById('iSatuan').value = it.satuan || '';
+    document.getElementById('itemFormBanner').textContent = `Mengedit ${it.nama}`;
+    document.getElementById('itemFormBanner').style.display = 'block';
+    document.getElementById('itemCancelEditBtn').style.display = 'inline-block';
+    document.getElementById('itemSubmitBtn').textContent = 'Update Item';
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+
+  document.getElementById('itemCancelEditBtn').addEventListener('click', resetItemForm);
+
+  document.getElementById('itemSubmitBtn').addEventListener('click', async ()=>{
+    const nama = document.getElementById('iNama').value.trim();
+    const hargaDefault = Number(document.getElementById('iHargaDefault').value) || 0;
+    const satuan = document.getElementById('iSatuan').value.trim();
+    if(!nama){ showToast('Isi nama item dulu ya'); return; }
+
+    const btn = document.getElementById('itemSubmitBtn');
+    btn.disabled = true;
+    try{
+      let res;
+      if(editingItemCatalogId){
+        res = await postToSheet({ action: 'updateItemCatalog', itemId: editingItemCatalogId, item: { nama, hargaDefault, satuan } });
+      } else {
+        res = await postToSheet({ action: 'createItemCatalog', item: { nama, hargaDefault, satuan } });
+      }
+      if(res.success){
+        showToast(editingItemCatalogId ? 'Item diperbarui' : 'Item baru ditambahkan');
+        resetItemForm();
+        loadItemCatalog();
+      } else {
+        showToast('Gagal: ' + (res.error || 'tidak diketahui'));
+      }
+    }catch(err){
+      showToast('Gagal terhubung ke server');
+      console.error(err);
+    }finally{
+      btn.disabled = false;
+    }
+  });
+
+  async function removeItemCatalog(id, nama){
+    if(!confirm(`Hapus item "${nama}" dari katalog?`)) return;
+    const res = await postToSheet({ action: 'deleteItemCatalog', itemId: id });
+    if(res.success){
+      showToast('Item dihapus');
+      loadItemCatalog();
     } else {
       showToast('Gagal: ' + (res.error || 'tidak diketahui'));
     }
