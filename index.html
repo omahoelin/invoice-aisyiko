@@ -307,6 +307,29 @@
 
   /* ===== Data Pelanggan / Data Item (reuses user-row look) ===== */
   .ticket-creator{font-size:11px;color:var(--ink-soft);margin-top:2px;}
+  .unregistered-card{border:1px dashed var(--brick);background:#FBF3E9;}
+  .unregistered-row{
+    display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+    padding:10px 0;border-bottom:1px solid var(--line);
+  }
+  .unregistered-row:last-child{border-bottom:none;}
+  .unregistered-row .un-info{font-size:13px;}
+  .unregistered-row .un-count{font-size:11px;color:var(--ink-soft);}
+  .unregistered-row button{
+    background:var(--sage);color:#fff;border:none;border-radius:6px;padding:7px 14px;
+    cursor:pointer;font-size:12px;font-weight:600;
+  }
+  .unregistered-row button:hover{opacity:0.9;}
+
+  .invoice-ticket.new-customer{
+    border-left:4px solid var(--sage);
+    background:#f4f7ee;
+  }
+  .new-customer-badge{
+    display:inline-block;font-size:10px;font-weight:700;letter-spacing:0.02em;
+    color:#fff;background:var(--sage);padding:2px 8px;border-radius:999px;
+    margin-left:8px;text-transform:uppercase;vertical-align:middle;
+  }
 
   .modal-overlay{
     position:fixed;inset:0;background:rgba(36,31,26,0.45);z-index:60;
@@ -481,6 +504,13 @@
 
   <!-- DATA PELANGGAN VIEW (Master & Owner) -->
   <div id="customersView" class="view">
+    <div class="card unregistered-card">
+      <h2 class="section-title"><span class="num">!</span> Pelanggan Belum Terdaftar</h2>
+      <p style="font-size:12.5px;color:var(--ink-soft);margin-top:-6px;margin-bottom:14px;">
+        Nama-nama ini muncul di Daftar Invoice tapi belum ada di Data Pelanggan. Cek dulu, lalu daftarkan kalau memang pelanggan tetap.
+      </p>
+      <div id="unregisteredContainer"></div>
+    </div>
     <div class="card">
       <h2 class="section-title"><span class="num">+</span> Tambah / Edit Pelanggan</h2>
       <div class="grid-2">
@@ -608,13 +638,13 @@
     document.getElementById('loginScreen').style.display = 'flex';
     document.getElementById('appRoot').style.display = 'none';
   }
-  function showApp(){
+  async function showApp(){
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('appRoot').style.display = 'block';
     resetToDefaultView();
     renderAuthUI();
+    await loadMasterData();
     loadInvoices();
-    loadMasterData();
   }
 
   function resetToDefaultView(){
@@ -740,7 +770,7 @@
       document.getElementById(btn.dataset.view).classList.add('active');
       if(btn.dataset.view === 'listView' || btn.dataset.view === 'reportView') loadInvoices();
       if(btn.dataset.view === 'usersView') loadUsers();
-      if(btn.dataset.view === 'customersView') loadCustomers();
+      if(btn.dataset.view === 'customersView'){ loadCustomers(); loadUnregisteredCustomers(); }
       if(btn.dataset.view === 'itemsView') loadItemCatalog();
     });
   });
@@ -1038,11 +1068,17 @@
         ? `<button onclick="editInvoice('${inv.id}')">Edit</button>
            <button onclick="deleteInvoice('${inv.id}')">Hapus</button>`
         : '';
+      const isNewCustomer = !!inv.pelanggan && !inv.customerId &&
+        !customersCache.some(c => c.nama.trim().toLowerCase() === inv.pelanggan.trim().toLowerCase());
+      const newCustomerBadge = isNewCustomer ? `<span class="new-customer-badge">Pelanggan Baru</span>` : '';
+      const quickAddBtn = (isNewCustomer && canEdit)
+        ? `<button onclick="quickAddCustomerFromInvoice('${inv.id}')">+ Tambah ke Data Pelanggan</button>`
+        : '';
       return `
-      <div class="invoice-ticket">
+      <div class="invoice-ticket ${isNewCustomer ? 'new-customer' : ''}">
         <div class="ticket-left">
           <span class="ticket-num">INV #${inv.invoiceNumber}</span>
-          <span class="ticket-name">${inv.pelanggan}</span>
+          <span class="ticket-name">${inv.pelanggan}${newCustomerBadge}</span>
           <span class="ticket-dates">${formatDate(inv.tanggal)} → jatuh tempo ${formatDate(inv.jatuhTempo)}</span>
           ${inv.dibuatOlehNama ? `<span class="ticket-creator">Dibuat oleh: ${inv.dibuatOlehNama}</span>` : ''}
         </div>
@@ -1050,6 +1086,7 @@
           <span class="ticket-total">${rupiah(inv.total)}</span>
           ${statusPill}
           <span class="ticket-actions">
+            ${quickAddBtn}
             ${editDeleteBtns}
             <button onclick="printInvoice('${inv.id}')">Cetak / PDF</button>
             <button onclick="sendWhatsApp('${inv.id}')">Kirim WA</button>
@@ -1552,6 +1589,26 @@ Terima kasih 🙏`;
     }
   });
 
+  async function quickAddCustomerFromInvoice(invoiceId){
+    const inv = invoicesCache.find(i => i.id === invoiceId);
+    if(!inv) return;
+    if(!confirm(`Tambahkan "${inv.pelanggan}" ke Data Pelanggan?`)) return;
+
+    const res = await registerNewCustomer(inv.pelanggan, inv.telepon || '');
+    if(!res.success){
+      showToast('Gagal: ' + (res.error || 'tidak diketahui'));
+      return;
+    }
+    showToast(`"${inv.pelanggan}" ditambahkan ke Data Pelanggan${res.linkedInvoices > 1 ? ` (${res.linkedInvoices} invoice ditautkan)` : ''}`);
+    await loadMasterData();
+    await loadInvoices();
+  }
+
+  // Dipakai bersama oleh tombol quick-add per invoice maupun panel review "Pelanggan Belum Terdaftar"
+  async function registerNewCustomer(nama, telepon){
+    return postToSheet({ action: 'registerCustomerFromInvoice', customer: { nama, telepon: telepon || '', alamat: '' } });
+  }
+
   async function removeCustomer(id, nama){
     if(!confirm(`Hapus data pelanggan "${nama}"? Invoice yang sudah ada tidak akan terhapus.`)) return;
     const res = await postToSheet({ action: 'deleteCustomer', customerId: id });
@@ -1561,6 +1618,47 @@ Terima kasih 🙏`;
     } else {
       showToast('Gagal: ' + (res.error || 'tidak diketahui'));
     }
+  }
+
+  async function loadUnregisteredCustomers(){
+    const container = document.getElementById('unregisteredContainer');
+    container.innerHTML = '<div class="empty-state">Memuat data...</div>';
+    const res = await postToSheet({ action: 'listUnregisteredCustomers' });
+    if(!res.success){
+      container.innerHTML = '<div class="empty-state">' + (res.error || 'Gagal memuat data') + '</div>';
+      return;
+    }
+    renderUnregisteredCustomers(res.unregistered || []);
+  }
+
+  function renderUnregisteredCustomers(list){
+    const container = document.getElementById('unregisteredContainer');
+    if(list.length === 0){
+      container.innerHTML = '<div class="empty-state" style="padding:8px 0;">Semua pelanggan di invoice sudah terdaftar 🎉</div>';
+      return;
+    }
+    container.innerHTML = list.map(u => `
+      <div class="unregistered-row">
+        <div class="un-info">
+          <strong>${u.pelanggan}</strong> ${u.telepon ? '· ' + u.telepon : ''}
+          <div class="un-count">${u.count} invoice</div>
+        </div>
+        <button onclick="registerFromReviewList('${u.pelanggan.replace(/'/g,"")}','${(u.telepon||'').replace(/'/g,"")}')">Daftarkan</button>
+      </div>
+    `).join('');
+  }
+
+  async function registerFromReviewList(nama, telepon){
+    if(!confirm(`Daftarkan "${nama}" ke Data Pelanggan? Semua invoice atas nama ini akan ikut tertaut.`)) return;
+    const res = await registerNewCustomer(nama, telepon);
+    if(!res.success){
+      showToast('Gagal: ' + (res.error || 'tidak diketahui'));
+      return;
+    }
+    showToast(`"${nama}" didaftarkan${res.linkedInvoices > 0 ? ` (${res.linkedInvoices} invoice ditautkan)` : ''}`);
+    loadUnregisteredCustomers();
+    loadCustomers();
+    loadInvoices();
   }
 
   async function showCustomerReport(id){
