@@ -531,8 +531,22 @@
   function showApp(){
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('appRoot').style.display = 'block';
+    resetToDefaultView();
     renderAuthUI();
     loadInvoices();
+  }
+
+  function resetToDefaultView(){
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    const defaultTab = document.querySelector('.tab-btn[data-view="formView"]');
+    if(defaultTab) defaultTab.classList.add('active');
+    document.getElementById('formView').classList.add('active');
+    usersCache = [];
+    invoicesCache = [];
+    if(typeof exitEditMode === 'function') exitEditMode();
+    if(typeof resetForm === 'function') resetForm();
+    if(typeof resetUserForm === 'function') resetUserForm();
   }
 
   function renderAuthUI(){
@@ -590,6 +604,7 @@
       try{ await postToSheet({ action: 'logout' }); }catch(e){}
     }
     clearSession();
+    resetToDefaultView();
     showLoginScreen();
   });
 
